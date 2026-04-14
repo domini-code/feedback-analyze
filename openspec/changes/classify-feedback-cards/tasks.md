@@ -6,10 +6,10 @@
 
 ## 2. API de clasificación
 
-- [x] 2.1 Crear route handler `app/api/classify/route.ts` que acepte `POST { entries: string[] }`
-- [x] 2.2 Implementar la llamada a Claude con `tool_use` y JSON schema `{ category, confidence }` para garantizar output estructurado
+- [x] 2.1 Crear route handler `app/api/analyze-feedback/route.ts` que acepte `POST { feedback: string }` (entradas separadas por `\n`)
+- [x] 2.2 Implementar la llamada a Claude con `tool_use` y JSON schema `{ category, sentiment }` para garantizar output estructurado
 - [x] 2.3 Clasificar todas las entradas en paralelo con `Promise.all`
-- [x] 2.4 Manejar errores por entrada sin interrumpir el batch (retornar `{ category: "error", confidence: 0 }`)
+- [x] 2.4 Manejar errores por entrada sin interrumpir el batch (retornar `{ text, category: "no_clasificable", sentiment: "neutral" }`)
 - [x] 2.5 Validar presencia de `ANTHROPIC_API_KEY` al arrancar; retornar HTTP 500 descriptivo si falta
 - [x] 2.6 Validar en el handler que el array no supere 50 entradas; retornar HTTP 400 si se excede
 
@@ -44,6 +44,6 @@
 ## 7. Integración en la página principal
 
 - [x] 7.1 Componer `FeedbackInput`, `FeedbackFilters` y `FeedbackCardGrid` en `app/page.tsx`
-- [x] 7.2 Conectar el submit de `FeedbackInput` con el llamado a `/api/classify` y la actualización del store
+- [x] 7.2 Conectar el submit de `FeedbackInput` con el llamado a `/api/analyze-feedback` y la actualización del store
 - [x] 7.3 Mostrar skeletons durante la carga y reemplazarlos por cards al recibir resultados
 - [x] 7.4 Verificar flujo completo: ingresar feedback → clasificar → ver cards → filtrar → recargar página y ver historial

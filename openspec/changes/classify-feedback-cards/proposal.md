@@ -5,8 +5,8 @@ Los equipos de producto reciben feedback de usuarios de forma continua pero sin 
 ## What Changes
 
 - Nueva interfaz para ingresar o importar feedback de usuarios (texto libre)
-- Motor de clasificación automática que asigna cada entrada a una categoría: `bug`, `feature-request`, `praise`, `pain-point`
-- Vista de resultados como cards con etiqueta de categoría, texto original y nivel de confianza
+- Motor de clasificación automática que asigna cada entrada a una categoría: `bug`, `feature_request`, `elogio`, `pain_point`, `no_clasificable`
+- Vista de resultados como cards con etiqueta de categoría, texto original y sentimiento
 - Sistema de filtros por categoría que actualiza la vista en tiempo real
 - Persistencia local de las clasificaciones para no perder el historial entre sesiones
 
@@ -15,7 +15,7 @@ Los equipos de producto reciben feedback de usuarios de forma continua pero sin 
 ### New Capabilities
 
 - `feedback-input`: Formulario para ingresar texto de feedback manualmente o en lote (una entrada por línea)
-- `feedback-classifier`: Lógica de clasificación que asigna cada fragmento de feedback a una de las cuatro categorías usando la API de Claude
+- `feedback-classifier`: Lógica de clasificación que asigna cada fragmento de feedback a una de las cinco categorías usando la API de Claude via `POST /api/analyze-feedback`
 - `feedback-cards`: Visualización de resultados como cards con categoría, texto y confianza
 - `feedback-filters`: Controles de filtrado por categoría que actualizan las cards visibles en tiempo real
 

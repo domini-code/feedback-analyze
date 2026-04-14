@@ -5,8 +5,8 @@ Proyecto Next.js greenfield. El objetivo es permitir a equipos de producto clasi
 ## Goals / Non-Goals
 
 **Goals:**
-- Clasificar cada entrada de feedback en exactamente una de cuatro categorías: `bug`, `feature-request`, `praise`, `pain-point`
-- Mostrar los resultados como cards con categoría visible y confianza
+- Clasificar cada entrada de feedback en exactamente una de cinco categorías: `bug`, `feature_request`, `elogio`, `pain_point`, `no_clasificable`
+- Mostrar los resultados como cards con categoría visible y sentimiento
 - Permitir filtrar cards por categoría en tiempo real (client-side)
 - Persistir clasificaciones en `localStorage` para sobrevivir recargas
 
@@ -21,7 +21,7 @@ Proyecto Next.js greenfield. El objetivo es permitir a equipos de producto clasi
 
 ### 1. Clasificación vía route handler de Next.js + Anthropic SDK
 
-**Decisión**: Crear un API route (`/api/classify`) que recibe un array de textos y retorna clasificaciones con categoría y score de confianza.
+**Decisión**: Crear un API route (`/api/analyze-feedback`) que recibe `{ feedback: string }` con entradas separadas por `\n` y retorna clasificaciones con categoría y sentimiento.
 
 **Alternativas consideradas**:
 - Clasificación client-side con WebLLM: descartada por tamaño del modelo y latencia de descarga
@@ -41,7 +41,7 @@ Proyecto Next.js greenfield. El objetivo es permitir a equipos de producto clasi
 
 ### 3. Prompt estructurado con JSON forzado
 
-**Decisión**: El prompt pide a Claude que retorne JSON `{ category, confidence }` donde `category` es uno de los cuatro valores literales. Se usa `tool_use` con un schema estricto para garantizar output estructurado.
+**Decisión**: El prompt pide a Claude que retorne JSON `{ category, sentiment }` donde `category` es uno de los cinco valores literales y `sentiment` es `positive|negative|neutral`. Se usa `tool_use` con un schema estricto para garantizar output estructurado.
 
 **Rationale**: Evita parseo frágil de texto libre; `tool_use` hace que Claude nunca salga del schema definido.
 
