@@ -7,6 +7,7 @@ import type {
   AnalyzeFeedbackResponse,
 } from "@/lib/types";
 import { CLASSIFIER_SYSTEM_PROMPT } from "@/lib/prompts";
+import { createClient } from "@/lib/supabase/server";
 
 const MAX_ENTRIES = 50;
 
@@ -60,6 +61,15 @@ function computeOverallSentiment(sentiments: Sentiment[]): OverallSentiment {
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
       { error: "ANTHROPIC_API_KEY is not configured. Set it in .env.local." },
@@ -81,7 +91,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const entries = body.feedback
+  const inputText = body.feedback;
+
+  const entries = inputText
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
@@ -130,7 +142,7 @@ export async function POST(request: NextRequest) {
     classifications.map((c) => c.sentiment)
   );
 
-  const response: AnalyzeFeedbackResponse = {
+  const responseBody: AnalyzeFeedbackResponse = {
     items: classifications,
     summary: {
       total: classifications.length,
@@ -139,5 +151,17 @@ export async function POST(request: NextRequest) {
     },
   };
 
-  return NextResponse.json(response);
+  // Persist-then-respond: a DB failure is logged but does not break the API contract.
+  const { error: insertError } = await supabase.from("analyses").insert({
+    user_id: user.id,
+    input_text: inputText,
+    items: responseBody.items,
+    summary: responseBody.summary,
+  });
+
+  if (insertError) {
+    console.error("[api/analyze-feedback] failed to persist analysis:", insertError);
+  }
+
+  return NextResponse.json(responseBody);
 }

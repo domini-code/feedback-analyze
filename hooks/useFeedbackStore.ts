@@ -26,8 +26,11 @@ function saveToStorage(items: FeedbackItem[]) {
 export function useFeedbackStore() {
   const [items, setItems] = useState<FeedbackItem[]>([]);
 
-  // Read from localStorage on mount
+  // Read from localStorage on mount. We can't use a lazy useState initializer
+  // because localStorage is unavailable during SSR — hydrating from an effect
+  // is the documented pattern here.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setItems(loadFromStorage());
   }, []);
 
