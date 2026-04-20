@@ -2,7 +2,7 @@
 
 - [ ] 1.1 Create a new Supabase project via the dashboard (region close to users).
 - [ ] 1.2 Configure the Google OAuth provider in Supabase (client ID/secret from Google Cloud Console) and whitelist the local + production redirect URIs.
-- [ ] 1.3 Add `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to `.env.local` and document them in `.env.example`.
+- [ ] 1.3 Add `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to `.env.local` and document them in `.env.example`.
 - [ ] 1.4 Install `@supabase/supabase-js` and `@supabase/ssr` with `pnpm add`.
 
 ## 2. Database schema & policies
