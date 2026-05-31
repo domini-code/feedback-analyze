@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FeedbackInput } from "@/components/FeedbackInput";
 import { FeedbackFilters } from "@/components/FeedbackFilters";
 import { FeedbackCardGrid } from "@/components/FeedbackCardGrid";
+import { UpgradeModal } from "@/components/UpgradeModal";
 import { useFeedbackStore } from "@/hooks/useFeedbackStore";
 import type { AnalyzeFeedbackResponse, FeedbackCategory, FeedbackItem } from "@/lib/types";
 
@@ -13,6 +14,10 @@ export function Analyzer() {
   const [isLoading, setIsLoading] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [upgrade, setUpgrade] = useState<{ open: boolean; limit: number }>({
+    open: false,
+    limit: 5,
+  });
 
   function toggleFilter(category: FeedbackCategory) {
     setActiveFilters((prev) =>
@@ -38,6 +43,12 @@ export function Analyzer() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ feedback: entries.join("\n") }),
       });
+
+      if (res.status === 402) {
+        const data = await res.json().catch(() => ({}));
+        setUpgrade({ open: true, limit: typeof data.limit === "number" ? data.limit : 5 });
+        return;
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -88,6 +99,12 @@ export function Analyzer() {
         items={visibleItems}
         isLoading={isLoading}
         skeletonCount={pendingCount}
+      />
+
+      <UpgradeModal
+        open={upgrade.open}
+        limit={upgrade.limit}
+        onClose={() => setUpgrade((prev) => ({ ...prev, open: false }))}
       />
     </>
   );

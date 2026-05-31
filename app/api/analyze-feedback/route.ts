@@ -8,8 +8,11 @@ import type {
 } from "@/lib/types";
 import { CLASSIFIER_SYSTEM_PROMPT } from "@/lib/prompts";
 import { createClient } from "@/lib/supabase/server";
+import { getUserPlan } from "@/lib/plans";
+import { getMonthlyUsage } from "@/lib/usage";
 
 const MAX_ENTRIES = 50;
+const FREE_MONTHLY_LIMIT = 5;
 
 const classifyTool: Anthropic.Tool = {
   name: "classify_feedback",
@@ -68,6 +71,19 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // Plan gate: free users are capped at FREE_MONTHLY_LIMIT analyses per calendar
+  // month; pro users are unlimited. Checked before any Claude call or DB write.
+  const plan = await getUserPlan(user.id);
+  if (plan === "free") {
+    const usage = await getMonthlyUsage(user.id);
+    if (usage >= FREE_MONTHLY_LIMIT) {
+      return NextResponse.json(
+        { error: "free_limit_reached", limit: FREE_MONTHLY_LIMIT },
+        { status: 402 }
+      );
+    }
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
