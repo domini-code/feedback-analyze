@@ -38,6 +38,13 @@ export async function POST() {
       metadata: { supabase_user_id: user.id },
     });
     customerId = customer.id;
+
+    // Persist immediately so the row exists before the webhook fires.
+    // Plan stays 'free' until the webhook confirms payment.
+    await supabase.from("user_plans").upsert(
+      { user_id: user.id, stripe_customer_id: customerId, plan: "free" },
+      { onConflict: "user_id" }
+    );
   }
 
   const session = await stripe.checkout.sessions.create({
