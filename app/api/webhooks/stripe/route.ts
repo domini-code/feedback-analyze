@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
+import { sendProActivationEmail } from "@/lib/email";
 
 /**
  * Service-role Supabase client — bypasses RLS. Constructed only here, inside the
@@ -78,6 +79,14 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error("[api/webhooks/stripe] failed to upsert user_plans:", error);
       return NextResponse.json({ error: "Failed to update plan." }, { status: 500 });
+    }
+
+    // Fire-and-forget: a missing email or Resend failure must never affect the 200 response.
+    const { data: authUser, error: authUserError } = await supabase.auth.admin.getUserById(userId);
+    if (authUserError || !authUser?.user?.email) {
+      console.warn("[api/webhooks/stripe] could not retrieve email for userId:", userId);
+    } else {
+      sendProActivationEmail(authUser.user.email).catch(() => {});
     }
   }
 

@@ -35,11 +35,11 @@ El sistema SHALL exponer `POST /api/checkout` que, para un usuario autenticado, 
 - **THEN** el sistema SHALL responder HTTP 401 sin contactar a Stripe
 
 ### Requirement: Webhook de Stripe verifica firma y activa el plan Pro
-El sistema SHALL exponer `POST /api/webhooks/stripe` que verifica la firma del evento y, en `checkout.session.completed`, establece el plan del usuario en `pro`.
+El sistema SHALL exponer `POST /api/webhooks/stripe` que verifica la firma del evento y, en `checkout.session.completed`, establece el plan del usuario en `pro`. Tras persistir el cambio de plan, el sistema SHALL también enviar un email de confirmación de activación Pro al usuario.
 
 #### Scenario: Verificación de firma sobre el cuerpo crudo
 - **WHEN** llega una request a `POST /api/webhooks/stripe`
-- **THEN** el sistema SHALL leer el cuerpo crudo (sin parsear como JSON) y verificar la cabecera `stripe-signature` con `STRIPE_WEBHOOK_SECRET` antes de procesar el evento
+- **THEN** el sistema SHALL leer el cuerpo como bytes sin parsear y verificar la firma con `STRIPE_WEBHOOK_SECRET`; si la verificación falla SHALL responder HTTP 400 sin procesar el evento
 
 #### Scenario: Firma inválida
 - **WHEN** la verificación de la firma falla
@@ -48,6 +48,14 @@ El sistema SHALL exponer `POST /api/webhooks/stripe` que verifica la firma del e
 #### Scenario: Activación de Pro en checkout.session.completed
 - **WHEN** se recibe y verifica un evento `checkout.session.completed` con `metadata.supabase_user_id = U`
 - **THEN** el sistema SHALL hacer upsert en `public.user_plans` con `user_id = U`, `plan = 'pro'`, `stripe_customer_id = session.customer`, `stripe_subscription_id = session.subscription` y `updated_at = now()`, usando el cliente service-role (bypass de RLS)
+
+#### Scenario: checkout.session.completed activa el plan Pro y envía email
+- **WHEN** el evento verificado es `checkout.session.completed` y contiene `metadata.supabase_user_id`
+- **THEN** el sistema SHALL hacer upsert en `user_plans` con `plan = 'pro'` y los identificadores de Stripe (`stripe_customer_id`, `stripe_subscription_id`), responder HTTP 200, y SHALL invocar `sendProActivationEmail(userEmail)` de forma no bloqueante — un fallo en el envío del email NOT SHALL cambiar la respuesta HTTP 200 ni revertir el cambio de plan
+
+#### Scenario: Obtención del email del usuario para el email de activación
+- **WHEN** el webhook procesa un `checkout.session.completed` para activar el plan Pro
+- **THEN** el sistema SHALL obtener el email del usuario desde `auth.users` usando el `supabase_user_id` del metadata del evento y el cliente service-role antes de invocar `sendProActivationEmail`; si el email no puede obtenerse SHALL omitir el envío del email y registrar un `warn` sin fallar
 
 #### Scenario: Idempotencia ante reentregas
 - **WHEN** Stripe reentrega el mismo `checkout.session.completed`

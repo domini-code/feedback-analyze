@@ -10,6 +10,7 @@ import { CLASSIFIER_SYSTEM_PROMPT } from "@/lib/prompts";
 import { createClient } from "@/lib/supabase/server";
 import { getUserPlan } from "@/lib/plans";
 import { getMonthlyUsage } from "@/lib/usage";
+import { sendLimitReachedEmail } from "@/lib/email";
 
 const MAX_ENTRIES = 50;
 const FREE_MONTHLY_LIMIT = 5;
@@ -79,6 +80,12 @@ export async function POST(request: NextRequest) {
   if (plan === "free") {
     const usage = await getMonthlyUsage(user.id);
     if (usage >= FREE_MONTHLY_LIMIT) {
+      const checkoutUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/checkout`;
+      if (user.email) {
+        sendLimitReachedEmail(user.email, checkoutUrl).catch((err) => {
+          console.error("[api/analyze-feedback] sendLimitReachedEmail unhandled rejection:", err);
+        });
+      }
       return NextResponse.json(
         { error: "free_limit_reached", limit: FREE_MONTHLY_LIMIT },
         { status: 402 }

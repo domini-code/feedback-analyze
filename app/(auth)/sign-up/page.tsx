@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { signUpWithEmail } from "./actions";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -29,23 +30,19 @@ function SignUpForm() {
     }
 
     setIsLoading(true);
-    const supabase = createClient();
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    const result = await signUpWithEmail(email, password);
     setIsLoading(false);
 
-    if (signUpError) {
-      setError(signUpError.message);
+    if (result.error) {
+      setError(result.error);
       return;
     }
 
-    if (data.session) {
+    if (result.requiresConfirmation) {
+      setInfo("Revisa tu correo para confirmar tu cuenta.");
+    } else {
       router.replace(redirectTo);
       router.refresh();
-    } else {
-      setInfo("Revisa tu correo para confirmar tu cuenta.");
     }
   }
 
